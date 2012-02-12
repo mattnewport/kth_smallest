@@ -62,67 +62,58 @@ template<typename T, size_t K_>
 class MaxHeap {
 public:
 	explicit MaxHeap(const uint32_t* values) : numElems(K) {
-		copy(values, values + K, begin(heap));
-		make_heap(begin(heap), end(heap));
+		copy(values, values + K, begin(heap) + 1);
+		make_heap(begin(heap) + 1, end(heap));
 	}
 
-	const T& Top() { return *begin(heap); }
+	const T& Top() { return heap[1]; }
 
-	void Add(const T& val) {
-		if (val >= Top()) {
-			return;
+	void ReplaceTop(const T& val) {
+		size_t hole = 1;
+		auto child = 2 * hole;
+		while (child < K_) {
+			auto& lChildRef = heap[child];
+			auto& rChildRef = heap[child+1];
+			auto& holeRef = heap[hole];
+			if (lChildRef > rChildRef) {
+				swap(holeRef, lChildRef);
+				hole = child;
+			} else {
+				swap(holeRef, rChildRef);
+				hole = child+1;
+			}
+			child = 2 * hole;
 		}
-		Remove();
-		Insert(val);
+
+		if (child == K_) { // only child at bottom
+			swap(heap[hole], heap[child]);
+			hole = child;
+		}
+
+		heap[hole] = val;
+		while (hole > 1) {
+			const auto parent = hole / 2;
+			auto& holeRef = heap[hole];
+			auto& parentRef = heap[parent];
+			if (holeRef < parentRef) {
+				break;
+			}
+			swap(holeRef, parentRef);
+			hole = parent;
+		}
 	}
 
 private:
-	void Insert(const T& val) {
-		size_t idx = numElems++;
-		heap[idx] = val;
-		while (idx) {
-			const auto parentIdx = Parent(idx);
-			if (heap[idx] <= heap[parentIdx]) {
-				break;
-			}
-			swap(heap[idx], heap[parentIdx]);
-			idx = parentIdx;
-		}
-	}
-
-	void Remove() {
-		*begin(heap) = heap[--numElems];
-		size_t parentIdx = 0;
-		size_t childIdx = 2 * parentIdx + 2;
-		while (childIdx < numElems) {
-			if (heap[childIdx] < heap[childIdx - 1]) {
-				--childIdx;
-			}
-			if (heap[parentIdx] >= heap[childIdx]) {
-				break;
-			}
-			swap(heap[parentIdx], heap[childIdx]);
-			parentIdx = childIdx;
-			childIdx = 2 * parentIdx + 2;
-		}
-
-		if (childIdx == numElems) { // only child at bottom
-			if (heap[parentIdx] < heap[childIdx - 1]) {
-				swap(heap[parentIdx], heap[childIdx - 1]);
-			}
-		}
-	}
-
-	size_t Parent(size_t idx) { return (idx - 1) / 2; }
-
 	size_t numElems;
-	array<T, K_> heap;
+	array<T, K_ + 1> heap; // K_ + 1 because heap is 1 rather than 0 indexed
 };
 
 uint32_t FindKthSmallestCustomHeap(const uint32_t* values) {
 	MaxHeap<uint32_t, K> maxHeap(values);
 	for_each(values + K, values + NumElements, [&](const uint32_t x) {
-		maxHeap.Add(x);
+		if (x < maxHeap.Top()) {
+			maxHeap.ReplaceTop(x);
+		}
 	});
 	return maxHeap.Top();
 }
@@ -156,7 +147,7 @@ double TestFindKthSmallest(Func findFunc, const char* funcName) {
 		totalTime += time;
 		assert(kthSmallest == K - 1);
 
-		cout << funcName << "(): kth smallest value: " << kthSmallest << ", took " << time << "s." << endl;
+		cout << funcName << "(): kth smallest value: " << kthSmallest << ", took " << (time * 1000.0f) << "ms." << endl;
 	}
 	return totalTime / NumIterations;
 }
@@ -170,7 +161,7 @@ int main() {
 	TEST(FindKthSmallestHeap);
 	TEST(FindKthSmallestCustomHeap);
 	for_each(begin(averageTimes), end(averageTimes), [&](const TestResult& r) {
-		cout << r.first << "(): average time was " << r.second << "s." << endl;
+		cout << r.first << "(): average time was " << (r.second * 1000.0f) << "ms." << endl;
 	});
 
 	return 0;
