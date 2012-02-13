@@ -69,41 +69,44 @@ public:
 	const T& Top() { return heap[1]; }
 
 	void ReplaceTop(const T& val) {
+		auto hole = PopHeap();
+		PushHeap(val, hole);
+	}
+
+private:
+	size_t PopHeap() {
 		size_t hole = 1;
 		auto child = 2 * hole;
 		while (child < K_) {
-			auto& lChildRef = heap[child];
-			auto& rChildRef = heap[child+1];
-			auto& holeRef = heap[hole];
-			if (lChildRef > rChildRef) {
-				swap(holeRef, lChildRef);
-				hole = child;
-			} else {
-				swap(holeRef, rChildRef);
-				hole = child+1;
-			}
+			const auto lChildVal = heap[child];
+			const auto rChild = child + 1;
+			const auto rChildVal = heap[rChild];
+			heap[hole] = max(lChildVal, rChildVal);
+			hole = lChildVal > rChildVal ? child : rChild;
 			child = 2 * hole;
 		}
 
 		if (child == K_) { // only child at bottom
-			swap(heap[hole], heap[child]);
+			heap[hole] = heap[child];
 			hole = child;
 		}
 
-		heap[hole] = val;
-		while (hole > 1) {
-			const auto parent = hole / 2;
-			auto& holeRef = heap[hole];
-			auto& parentRef = heap[parent];
-			if (holeRef < parentRef) {
-				break;
-			}
-			swap(holeRef, parentRef);
-			hole = parent;
-		}
+		return hole;
 	}
 
-private:
+	void PushHeap(T val, size_t hole) {
+		while (hole > 1) {
+			const auto parent = hole / 2;
+			auto& parentRef = heap[parent];
+			if (val < parentRef) {
+				break;
+			}
+			heap[hole] = parentRef;
+			hole = parent;
+		}
+		heap[hole] = val;
+	}
+
 	size_t numElems;
 	array<T, K_ + 1> heap; // K_ + 1 because heap is 1 rather than 0 indexed
 };
