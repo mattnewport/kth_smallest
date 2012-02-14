@@ -13,34 +13,10 @@ using namespace std;
 static const size_t NumElements = 128 * 1024;
 static const size_t K = 256;
 
-template<typename T, size_t K_>
-class KSmallest {
-public:
-	KSmallest() : numVals(0) {}
-
-	void Insert(const T& val) {
-		const auto insertIt = lower_bound(begin(vals), begin(vals) + numVals, val);
-		if (insertIt != end(vals)) {
-			numVals = min(numVals + 1, K_);
-			for (auto dest = begin(vals) + numVals - 1; dest > insertIt; --dest) {
-				*dest = *(dest - 1);
-			}
-			*insertIt = val;
-		}
-	}
-
-	T KthSmallest() { return vals[K_ - 1]; }
-
-private:
-	size_t numVals;
-	T vals[K];
-};
-
 uint32_t FindKthSmallest(const uint32_t* values) {
-	KSmallest<uint32_t, K> finder;
-	for_each(values, values + NumElements, [&](const uint32_t x) { finder.Insert(x); });
-	
-	return finder.KthSmallest();
+	vector<uint32_t> v(values, values + NumElements);
+	nth_element(begin(v), begin(v) + K - 1, end(v));
+	return v[K - 1];
 }
 
 uint32_t FindKthSmallestHeap(const uint32_t* values) {
@@ -61,12 +37,12 @@ uint32_t FindKthSmallestHeap(const uint32_t* values) {
 template<typename T, size_t K_>
 class MaxHeap {
 public:
-	explicit MaxHeap(const T* values) : numElems(K) {
-		copy(values, values + K, begin(heap) + 1);
+	explicit MaxHeap(const T* values) : numElems(K_) {
+		copy(values, values + K_, begin(heap) + 1);
 		make_heap(begin(heap) + 1, end(heap));
 	}
 
-	const T& Top() { return heap[1]; }
+	const T& Top() const { return heap[1]; }
 
 	void ReplaceTop(const T& val) {
 		auto hole = PopHeap();
