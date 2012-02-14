@@ -61,7 +61,7 @@ uint32_t FindKthSmallestHeap(const uint32_t* values) {
 template<typename T, size_t K_>
 class MaxHeap {
 public:
-	explicit MaxHeap(const uint32_t* values) : numElems(K) {
+	explicit MaxHeap(const T* values) : numElems(K) {
 		copy(values, values + K, begin(heap) + 1);
 		make_heap(begin(heap) + 1, end(heap));
 	}
@@ -78,8 +78,8 @@ private:
 		size_t hole = 1;
 		auto child = 2 * hole;
 		while (child < K_) {
-			const auto lChildVal = heap[child];
 			const auto rChild = child + 1;
+			const auto lChildVal = heap[child];
 			const auto rChildVal = heap[rChild];
 			heap[hole] = max(lChildVal, rChildVal);
 			hole = lChildVal > rChildVal ? child : rChild;
@@ -94,14 +94,13 @@ private:
 		return hole;
 	}
 
-	void PushHeap(T val, size_t hole) {
+	void PushHeap(const T& val, size_t hole) {
 		while (hole > 1) {
 			const auto parent = hole / 2;
-			auto& parentRef = heap[parent];
-			if (val < parentRef) {
+			if (val < heap[parent]) {
 				break;
 			}
-			heap[hole] = parentRef;
+			heap[hole] = heap[parent];
 			hole = parent;
 		}
 		heap[hole] = val;
